@@ -26,6 +26,9 @@ Project/Keil/Output/
 *.bat
 *.tmp
 
+# ---- Keil 本机工具配置（含串口号、芯片型号，因机器而异）----
+Project/Keil/config.ini
+
 # ---- Keil / 插件日志 ----
 Project/Keil/.vscode/*.log
 Project/Keil/.vscode/*.log.lock
