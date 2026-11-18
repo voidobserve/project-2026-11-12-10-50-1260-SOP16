@@ -14,7 +14,8 @@
     rf检测引脚 用 P01 代替 P03
     pwm_channel_1 输出引脚 用 P05 代替 P15
 */
-#define USE_MY_TEST_PIN 0 // 是否使用测试用的引脚（开发板没有相关的引脚，用其他空闲的引脚来代替）
+#define USE_MY_TEST_PIN                                                        \
+    0 // 是否使用测试用的引脚（开发板没有相关的引脚，用其他空闲的引脚来代替）
 
 #if USE_MY_DEBUG
 #include <stdio.h>
@@ -32,7 +33,8 @@
 // #define TMR1_CNT_30_MINUTES 18000UL // 3min
 
 // 在热敏电阻端检测的电压值与温度对应的关系，电压值单位：mV
-#define VOLTAGE_TEMP_75 (3050) // 这一个值在客户那边测试出来是74摄氏度,对应的电压是3.1V（实际测得是在2.73V左右）
+#define VOLTAGE_TEMP_75                                                        \
+    (3050) // 这一个值在客户那边测试出来是74摄氏度,对应的电压是3.1V（实际测得是在2.73V左右）
 
 // #define VOLTAGE_TEMP_75 (2990) // 75摄氏度对应的电压值
 // #define VOLTAGE_TEMP_65 (3388) // 65摄氏度对应的电压值
@@ -47,7 +49,8 @@ enum
     TEMP_75_5_MIN, // 超过75摄氏度（±5摄氏度）5min
 };
 
-#define ADC_VAL_WHEN_UNSTABLE (2243) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
+#define ADC_VAL_WHEN_UNSTABLE                                                  \
+    (2243) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
 // #define ADC_VAL_WHEN_UNSTABLE (2438) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
 // #define ADC_VAL_WHEN_UNSTABLE (2600) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
 // #define ADC_VAL_WHEN_UNSTABLE (2730) // 9脚检测到电压不稳定、发动机功率不足时，对应的的阈值，大于该值就认为不稳定
@@ -62,7 +65,8 @@ enum
     检测时使用 4.2V 内部参考电压， 3.9V 对应的ad值是 4803
 */
 #define ADC_VAL_WHEN_FAN_ERR (3803)
-#define ADC_VAL_WHEN_FAN_NORMAL (3705) // 风扇正常时，对应的ad值 （3.8V--对应ad值3705）
+#define ADC_VAL_WHEN_FAN_NORMAL                                                \
+    (3705) // 风扇正常时，对应的ad值 （3.8V--对应ad值3705）
 
 #endif
 
@@ -75,9 +79,12 @@ enum
     4.30 V 对应的ad值是  4300 / 4870 * 4096  == 3616.59
     4.50 V 对应的ad值是  4500 / 4870 * 4096  == 3784.80
 */
-#define ADC_REF_VOLTAGE_FAN ((u16)4870)                                       // 检测风扇一侧的ad值时，使用的参考电压，单位：mV
-#define ADC_VAL_WHEN_FAN_ERR (u16)((u32)4300 * 4096 / ADC_REF_VOLTAGE_FAN)    // 风扇异常时，对应的ad值
-#define ADC_VAL_WHEN_FAN_NORMAL (u16)((u32)4500 * 4096 / ADC_REF_VOLTAGE_FAN) // 风扇正常时，对应的ad值
+#define ADC_REF_VOLTAGE_FAN                                                    \
+    ((u16)4870) // 检测风扇一侧的ad值时，使用的参考电压，单位：mV
+#define ADC_VAL_WHEN_FAN_ERR                                                   \
+    (u16)((u32)4300 * 4096 / ADC_REF_VOLTAGE_FAN) // 风扇异常时，对应的ad值
+#define ADC_VAL_WHEN_FAN_NORMAL                                                \
+    (u16)((u32)4500 * 4096 / ADC_REF_VOLTAGE_FAN) // 风扇正常时，对应的ad值
 
 // 累计检测风扇工作正常多少时间，才认为是真的工作正常，并更新对应的状态，单位：ms （例如，累计检测风扇正常工作5s，才将风扇的状态更新为工作正常）
 #define FAN_SCAN_TIMES_WHEN_NORMAL (8000)

@@ -24,7 +24,7 @@
 
 #if USE_MY_DEBUG // 打印串口配置
 
-#define UART0_BAUD 115200
+#define UART0_BAUD      115200
 #define USER_UART0_BAUD ((SYSCLK - UART0_BAUD) / (UART0_BAUD))
 // 重写puchar()函数
 char putchar(char c)
@@ -47,26 +47,27 @@ void my_debug_config(void)
     //              UART_EN(0x1); // 8bit数据，1bit停止位
 
     P0_MD0 &= ~(GPIO_P00_MODE_SEL(0x3));
-    P0_MD0 |= GPIO_P00_MODE_SEL(0x1);            // 配置为输出模式
-    FOUT_S00 |= GPIO_FOUT_UART0_TX;              // 配置为UART0_TX
-    UART0_BAUD1 = (USER_UART0_BAUD >> 8) & 0xFF; // 配置波特率高八位
-    UART0_BAUD0 = USER_UART0_BAUD & 0xFF;        // 配置波特率低八位
-    UART0_CON0 = UART_STOP_BIT(0x0) |
-                 UART_EN(0x1); // 8bit数据，1bit停止位
+    P0_MD0 |= GPIO_P00_MODE_SEL(0x1);               // 配置为输出模式
+    FOUT_S00 |= GPIO_FOUT_UART0_TX;                 // 配置为UART0_TX
+    UART0_BAUD1 = (USER_UART0_BAUD >> 8) & 0xFF;    // 配置波特率高八位
+    UART0_BAUD0 = USER_UART0_BAUD & 0xFF;           // 配置波特率低八位
+    UART0_CON0 = UART_STOP_BIT(0x0) | UART_EN(0x1); // 8bit数据，1bit停止位
 }
 #endif // USE_MY_DEBUG // 打印串口配置
 
 void main(void)
 {
     // 看门狗默认打开, 复位时间2s
-    WDT_KEY = WDT_KEY_VAL(0xDD); // 关闭看门狗 (如需配置看门狗请查看“WDT\WDT_Reset”示例)
+    WDT_KEY = WDT_KEY_VAL(
+        0xDD); // 关闭看门狗 (如需配置看门狗请查看“WDT\WDT_Reset”示例)
 
     system_init();
 
     // 关闭HCK和HDA的调试功能
-    WDT_KEY = 0x55;  // 解除写保护
-    IO_MAP &= ~0x01; // 清除这个寄存器的值，实现关闭HCK和HDA引脚的调试功能（解除映射）
-    WDT_KEY = 0xBB;  // 写一个无效的数据，触发写保护
+    WDT_KEY = 0x55; // 解除写保护
+    IO_MAP &=
+        ~0x01; // 清除这个寄存器的值，实现关闭HCK和HDA引脚的调试功能（解除映射）
+    WDT_KEY = 0xBB; // 写一个无效的数据，触发写保护
 
 #if USE_MY_DEBUG // 打印串口配置
     // 初始化打印
@@ -121,11 +122,11 @@ void main(void)
     limited_pwm_duty_due_to_temp = MAX_PWM_DUTY;
     limited_pwm_duty_due_to_unstable_engine = MAX_PWM_DUTY;
 
-    pwm_mode = PWM_MODE_COLOR_CYAN; // 开机缓启动之后，默认的模式
+    pwm_mode = PWM_MODE_COLOR_CYAN;                 // 开机缓启动之后，默认的模式
+    pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_6; // 开机后默认为最大亮度
     power_on_handle();
 
-    while (1)
-    {
+    while (1) {
 #if 1
         temperature_scan(); // 检测热敏电阻一端的电压值
         fan_scan();         // 检测风扇的状态是否异常，并根据结果来限制pwm占空比
@@ -135,8 +136,10 @@ void main(void)
         rf_key_handle();
 
         // 如果 expect_adjust_pwm_channel_x_duty 有变化，可以在这里修改 adjust_pwm_channel_x_duty
-        adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
-        adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_1_duty);
+        adjust_pwm_channel_0_duty =
+            get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
+        adjust_pwm_channel_1_duty =
+            get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_1_duty);
 
         // 风扇控制：
         // fan_ctl(); // 没有了线控调光，这里目前用不上，没有关灯的功能

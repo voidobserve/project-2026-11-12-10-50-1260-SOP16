@@ -6,7 +6,8 @@
 volatile bit flag_is_in_power_on = 0; // 是否处于开机缓启动
 static volatile u32 pwm0_power_on_step = 0;
 static volatile u32 pwm1_power_on_step = 0;
-volatile bit flag_time_comes_during_power_on = 0; // 标志位，开机缓启动期间，调节时间到来（由定时器置位）
+volatile bit flag_time_comes_during_power_on =
+    0; // 标志位，开机缓启动期间，调节时间到来（由定时器置位）
 
 void power_on_handle(void)
 {
@@ -14,11 +15,9 @@ void power_on_handle(void)
     cur_pwm_channel_1_duty = 0;
     flag_is_in_power_on = 1; // 表示到了开机缓启动
 
-    while (1)
-    {
+    while (1) {
         if (cur_pwm_channel_0_duty >= PWM0_DEST_POWER_ON_DUTY_VAL &&
-            cur_pwm_channel_1_duty >= PWM1_DEST_POWER_ON_DUTY_VAL)
-        {
+            cur_pwm_channel_1_duty >= PWM1_DEST_POWER_ON_DUTY_VAL) {
             // 当两路pwm都到对应的占空比值之后，才退出开机缓启动
             break;
         }
@@ -27,23 +26,19 @@ void power_on_handle(void)
         {
             flag_time_comes_during_power_on = 0;
             pwm0_power_on_step += PWM0_POWER_ON_ADJUST_STEP; // 累计步长
-            if (pwm0_power_on_step >= 1000)
-            {
+            if (pwm0_power_on_step >= 1000) {
                 pwm0_power_on_step -= 1000;
 
-                if (cur_pwm_channel_0_duty < PWM0_DEST_POWER_ON_DUTY_VAL)
-                {
+                if (cur_pwm_channel_0_duty < PWM0_DEST_POWER_ON_DUTY_VAL) {
                     cur_pwm_channel_0_duty++;
                 }
             }
 
             pwm1_power_on_step += PWM1_POWER_ON_ADJUST_STEP;
-            if (pwm1_power_on_step >= 1000)
-            {
+            if (pwm1_power_on_step >= 1000) {
                 pwm1_power_on_step -= 1000;
 
-                if (cur_pwm_channel_1_duty < PWM1_DEST_POWER_ON_DUTY_VAL)
-                {
+                if (cur_pwm_channel_1_duty < PWM1_DEST_POWER_ON_DUTY_VAL) {
                     cur_pwm_channel_1_duty++;
                 }
             }

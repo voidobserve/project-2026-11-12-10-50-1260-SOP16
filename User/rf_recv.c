@@ -5,21 +5,20 @@ volatile u32 rf_data = 0;                // 存放接收到的rf数据
 
 // 按键键值与按键事件关系表
 static const u8 rf_key_event_table[][RF_KEY_EFFECT_EVENT_NUMS + 1] = {
-    {RF_433_KEY_VAL_R1C1, RF_433_KEY_EVENT_R1C1_CLICK, RF_433_KEY_EVENT_R1C1_LONG},
-    {RF_433_KEY_VAL_R1C2, RF_433_KEY_EVENT_R1C2_CLICK, RF_433_KEY_EVENT_R1C2_LONG},
-    {RF_433_KEY_VAL_R2C1, RF_433_KEY_EVENT_R2C1_CLICK, RF_433_KEY_EVENT_R2C1_LONG},
-    {RF_433_KEY_VAL_R2C2, RF_433_KEY_EVENT_R2C2_CLICK, RF_433_KEY_EVENT_R2C2_LONG},
+    {RF_433_KEY_VAL_R1C1, RF_433_KEY_EVENT_R1C1_PRESS},
+    {RF_433_KEY_VAL_R1C2, RF_433_KEY_EVENT_R1C2_PRESS},
+    {RF_433_KEY_VAL_R2C1, RF_433_KEY_EVENT_R2C1_PRESS},
+    {RF_433_KEY_VAL_R2C2, RF_433_KEY_EVENT_R2C2_PRESS},
 
-    {RF_433_KEY_VAL_R3C1, RF_433_KEY_EVENT_R3C1_CLICK, RF_433_KEY_EVENT_R3C1_LONG},
-    {RF_433_KEY_VAL_R3C2, RF_433_KEY_EVENT_R3C2_CLICK, RF_433_KEY_EVENT_R3C2_LONG},
-    {RF_433_KEY_VAL_R4C1, RF_433_KEY_EVENT_R4C1_CLICK, RF_433_KEY_EVENT_R4C1_LONG},
-    {RF_433_KEY_VAL_R4C2, RF_433_KEY_EVENT_R4C2_CLICK, RF_433_KEY_EVENT_R4C2_LONG},
+    {RF_433_KEY_VAL_R3C1, RF_433_KEY_EVENT_R3C1_PRESS},
+    {RF_433_KEY_VAL_R3C2, RF_433_KEY_EVENT_R3C2_PRESS},
+    {RF_433_KEY_VAL_R4C1, RF_433_KEY_EVENT_R4C1_PRESS},
+    {RF_433_KEY_VAL_R4C2, RF_433_KEY_EVENT_R4C2_PRESS},
 
-    {RF_433_KEY_VAL_R5C1, RF_433_KEY_EVENT_R5C1_CLICK, RF_433_KEY_EVENT_R5C1_LONG},
-    {RF_433_KEY_VAL_R5C2, RF_433_KEY_EVENT_R5C2_CLICK, RF_433_KEY_EVENT_R5C2_LONG},
-    {RF_433_KEY_VAL_R6C1, RF_433_KEY_EVENT_R6C1_CLICK, RF_433_KEY_EVENT_R6C1_LONG},
-    {RF_433_KEY_VAL_R6C2, RF_433_KEY_EVENT_R6C2_CLICK, RF_433_KEY_EVENT_R6C2_LONG},
-
+    {RF_433_KEY_VAL_R5C1, RF_433_KEY_EVENT_R5C1_PRESS},
+    {RF_433_KEY_VAL_R5C2, RF_433_KEY_EVENT_R5C2_PRESS},
+    {RF_433_KEY_VAL_R6C1, RF_433_KEY_EVENT_R6C1_PRESS},
+    {RF_433_KEY_VAL_R6C2, RF_433_KEY_EVENT_R6C2_PRESS},
 };
 
 extern u8 rf_key_get_key_id(void);
@@ -27,16 +26,17 @@ volatile struct key_driver_para rf_key_para = {
     // 编译器不支持指定成员赋值的写法，会报错
 
     RF_KEY_SCAN_CIRCLE_TIMES, // .scan_times 扫描频率，单位：ms
-    0,                        // .cur_scan_times 按键扫描频率, 单位ms，由1ms的定时器中断内累加，在key_driver_scan()中清零
-    NO_KEY,                   // .last_key
+    0, // .cur_scan_times 按键扫描频率, 单位ms，由1ms的定时器中断内累加，在key_driver_scan()中清零
+    NO_KEY, // .last_key
 
     0,                   // .filter_value
     0,                   // .filter_cnt
     RF_KEY_FILTER_TIMES, // .filter_time 按键消抖次数，与扫描频率有关（rf按键不消抖）
 
-    RF_LONG_PRESS_TIME_THRESHOLD_MS / RF_KEY_SCAN_CIRCLE_TIMES,                                     // .long_time
-    (RF_LONG_PRESS_TIME_THRESHOLD_MS + RF_HOLD_PRESS_TIME_THRESHOLD_MS) / RF_KEY_SCAN_CIRCLE_TIMES, // .hold_time
-    0,                                                                                              // .press_cnt
+    RF_LONG_PRESS_TIME_THRESHOLD_MS / RF_KEY_SCAN_CIRCLE_TIMES, // .long_time
+    (RF_LONG_PRESS_TIME_THRESHOLD_MS + RF_HOLD_PRESS_TIME_THRESHOLD_MS) /
+        RF_KEY_SCAN_CIRCLE_TIMES, // .hold_time
+    0,                            // .press_cnt
 
     0,                              // .click_cnt
     0,                              // .click_delay_cnt
@@ -57,25 +57,54 @@ volatile struct key_driver_para rf_key_para = {
  */
 static u8 rf_key_get_key_id(void)
 {
+    u32 recv_data; // 存放接收到的数据
     u8 ret = NO_KEY;
+    static volatile u8 last_key = NO_KEY;
+    static volatile u16 key_val_hold_cnt; // 按键键值保持计数
 
-    if (0 == flag_is_recved_rf_data)
-    {
-        return NO_KEY;
+    if (0 == flag_is_recved_rf_data) {
+        // 当前扫描周期没有接收到rf信号
+        if (key_val_hold_cnt > 0) {
+            // 没有超时，返回上一次记录的键值
+            key_val_hold_cnt--;
+            ret = last_key;
+        } else {
+            // 超时之后，返回无效键值
+            last_key = NO_KEY;
+            ret = NO_KEY;
+        }
+
+        return ret;
     }
 
+    // 关闭总中断
+    IE_EA = 0;
+    recv_data = rf_data;
     flag_is_recved_rf_data = 0;
+    IE_EA = 1;
 
-    if ((u8)(rf_data >> 16) != RF_KEY_ADDR_BYTE_1 ||
-        (u8)(rf_data >> 8) != RF_KEY_ADDR_BYTE_2)
-    {
-        return NO_KEY;
+    if ((u8)(recv_data >> 16) != RF_KEY_ADDR_BYTE_1 ||
+        (u8)(recv_data >> 8) != RF_KEY_ADDR_BYTE_2) {
+        if (key_val_hold_cnt > 0) {
+            // 没有超时，返回上一次记录的键值
+            key_val_hold_cnt--;
+            ret = last_key;
+        } else {
+            // 超时之后，返回无效键值
+            last_key = NO_KEY;
+            ret = NO_KEY;
+        }
+
+        return ret;
     }
 
-    ret = (u8)(rf_data & 0xFF); // 获取低8位作为键值
-    // printf("rf_data 0x %lx\n", rf_data);
+    // 实际测试一帧数据，包括帧间隔，有64ms
+    key_val_hold_cnt = ((u16)64 * 4 / RF_KEY_SCAN_CIRCLE_TIMES);
 
-    // rf_data = 0;    // 接收完成后，清除接收到的数据
+    ret = (u8)(recv_data & 0xFF); // 获取低8位作为键值
+    last_key = ret;               // 保存键值
+    // printf("recv_data 0x %lx\n", recv_data);
+
     return (u8)ret; // 直接获取键值
 }
 
@@ -97,24 +126,15 @@ static u8 rf_key_get_event(const u8 key_val, const u8 key_event)
     //     printf("key_val %bu, key_event %bu\n", key_val, key_event);
     // }
 
-    if (key_event == KEY_EVENT_CLICK)
-    {
+    if (key_event == KEY_EVENT_PRESS) {
         key_event_index = 1;
-    }
-    else if (key_event == KEY_EVENT_LONG)
-    {
-        key_event_index = 2;
-    }
-    else
-    {
+    } else {
         return RF_433_KEY_EVENT_NONE;
     }
 
-    for (i = 0; i < ARRAY_SIZE(rf_key_event_table); i++)
-    {
+    for (i = 0; i < ARRAY_SIZE(rf_key_event_table); i++) {
         // 如果往 KEY_EVENT 枚举中添加了新的按键事件，这里查表的方法就会失效，需要手动修改
-        if (key_val == rf_key_event_table[i][0])
-        {
+        if (key_val == rf_key_event_table[i][0]) {
             ret_key_event = rf_key_event_table[i][key_event_index];
             break;
         }
@@ -129,129 +149,80 @@ void rf_key_handle(void)
     u8 rf_key_event = RF_433_KEY_EVENT_NONE;
 
     // 如果是无效的按键信息，函数直接返回
-    if (rf_key_para.latest_key_val == NO_KEY)
-    {
+    if (rf_key_para.latest_key_val == NO_KEY) {
         return;
     }
 #if 1
 
-    rf_key_event = rf_key_get_event(rf_key_para.latest_key_val, rf_key_para.latest_key_event);
+    rf_key_event = rf_key_get_event(rf_key_para.latest_key_val,
+                                    rf_key_para.latest_key_event);
 
     // rf_key_para.latest_key_val = NO_KEY;
     rf_key_para.latest_key_event = KEY_EVENT_NONE;
 
     // printf("rf event %bu\n", rf_key_event);
 
-    switch (rf_key_event)
-    {
-    case RF_433_KEY_EVENT_R1C1_CLICK:
-    case RF_433_KEY_EVENT_R1C1_LONG:
-    {
+    switch (rf_key_event) {
+    case RF_433_KEY_EVENT_R1C1_PRESS:
         // printf("r1c1\n");
-        pwm_mode = PWM_MODE_PULSE_1;
-    }
-    break;
-    // =====================================================
-    case RF_433_KEY_EVENT_R1C2_CLICK:
-    case RF_433_KEY_EVENT_R1C2_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_1;
+        break;
+    case RF_433_KEY_EVENT_R1C2_PRESS:
         // printf("r1c2\n");
-        pwm_mode = PWM_MODE_PULSE_2;
-    }
-    break;
-    // =====================================================
-    case RF_433_KEY_EVENT_R2C1_CLICK:
-    case RF_433_KEY_EVENT_R2C1_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_2;
+        break;
+    case RF_433_KEY_EVENT_R2C1_PRESS:
         // printf("r2c1\n");
-        pwm_mode = PWM_MODE_PULSE_3;
-    }
-    break;
-    // =====================================================
-    case RF_433_KEY_EVENT_R2C2_CLICK:
-    case RF_433_KEY_EVENT_R2C2_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_3;
+        break;
+    case RF_433_KEY_EVENT_R2C2_PRESS:
         // printf("r2c2\n");
-        pwm_mode = PWM_MODE_PULSE_4;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R3C1_CLICK:
-    case RF_433_KEY_EVENT_R3C1_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_4;
+        break;
+    case RF_433_KEY_EVENT_R3C1_PRESS:
         // printf("r3c1\n");
-        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_1;
-    }
-    break;
-    // =====================================================
-    case RF_433_KEY_EVENT_R3C2_CLICK:
-    case RF_433_KEY_EVENT_R3C2_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_5;
+        break;
+    case RF_433_KEY_EVENT_R3C2_PRESS:
         // printf("r3c2\n");
-        pwm_mode = PWM_MODE_PULSE_5;
-    }
-    break;
-    // =====================================================
-    case RF_433_KEY_EVENT_R4C1_CLICK:
-    case RF_433_KEY_EVENT_R4C1_LONG:
-    {
+        pwm_brightness_lev = PWM_MODE_BRIGHTNESS_LEV_6;
+        break;
+    case RF_433_KEY_EVENT_R4C1_PRESS:
         // printf("r4c1\n");
-        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_2;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R4C2_CLICK:
-    case RF_433_KEY_EVENT_R4C2_LONG:
-    {
+        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_1;
+        break;
+    case RF_433_KEY_EVENT_R4C2_PRESS:
         // printf("r4c2\n");
         pwm_mode = PWM_MODE_COLOR_BLUE;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R5C1_CLICK:
-    case RF_433_KEY_EVENT_R5C1_LONG:
-    {
+        break;
+    case RF_433_KEY_EVENT_R5C1_PRESS:
         // printf("r5c1\n");
-        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_3;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R5C2_CLICK:
-    case RF_433_KEY_EVENT_R5C2_LONG:
-    {
+        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_2;
+        break;
+    case RF_433_KEY_EVENT_R5C2_PRESS:
         // printf("r5c2\n");
         pwm_mode = PWM_MODE_COLOR_CYAN;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R6C1_CLICK:
-    case RF_433_KEY_EVENT_R6C1_LONG:
-    {
+        break;
+    case RF_433_KEY_EVENT_R6C1_PRESS:
         // printf("r6c1\n");
-        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_4;
-    }
-    break;
-        // =====================================================
-    case RF_433_KEY_EVENT_R6C2_CLICK:
-    case RF_433_KEY_EVENT_R6C2_LONG:
-    {
+        pwm_mode = PWM_MODE_COLOR_TEMPERATURE_3;
+        break;
+    case RF_433_KEY_EVENT_R6C2_PRESS:
         // printf("r6c2\n");
         pwm_mode = PWM_MODE_COLOR_GREEN;
-    }
-    break;
-        // =====================================================
+        break;
 
     default:
-    {
         return;
-    }
-    break;
+        break;
     }
 
     // 根据对应的模式，立即设置 pwm 占空比
-    pwm_mode_handle();
-    adjust_pwm_channel_0_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
-    adjust_pwm_channel_1_duty = get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_1_duty);
+    pwm_mode_apply();
+    adjust_pwm_channel_0_duty =
+        get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_0_duty);
+    adjust_pwm_channel_1_duty =
+        get_pwm_channel_x_adjust_duty(expect_adjust_pwm_channel_1_duty);
     cur_pwm_channel_0_duty = adjust_pwm_channel_0_duty;
     cur_pwm_channel_1_duty = adjust_pwm_channel_1_duty;
     set_pwm_channel_0_duty(cur_pwm_channel_0_duty);

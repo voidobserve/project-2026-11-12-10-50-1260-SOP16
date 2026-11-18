@@ -8,14 +8,15 @@
 enum KEY_EVENT
 {
     KEY_EVENT_NONE = 0,
-    KEY_EVENT_CLICK = 1,        // 单击
+    KEY_EVENT_PRESS = 1, // 按下
+    KEY_EVENT_CLICK = 2, // 单击
     // KEY_EVENT_DOUBLE_CLICK, // 双击
     // KEY_EVENT_TRIPLE_CLICK, // 三击
     // KEY_EVENT_FOURTH_CLICK, // 四击
     // KEY_EVENT_FIRTH_CLICK,  // 五击
-    KEY_EVENT_LONG,         // 长按
-    KEY_EVENT_HOLD,         // 持续按下
-    KEY_EVENT_UP,           // 长按/持续按下后，松开了按键
+    KEY_EVENT_LONG, // 长按
+    KEY_EVENT_HOLD, // 持续按下
+    KEY_EVENT_UP,   // 长按/持续按下后，松开了按键
 };
 
 enum KEY_TYPE
@@ -28,9 +29,10 @@ enum KEY_TYPE
 
 typedef struct key_driver_para
 {
-    const u8 scan_times;        // 按键扫描频率, 单位ms
-    volatile u8 cur_scan_times; // 按键扫描频率, 单位ms，由1ms的定时器中断内累加，在key_driver_scan()中清零
-    volatile u8 last_key;       // 存放上一次调用get_value()之后得到的按键值
+    const u8 scan_times; // 按键扫描频率, 单位ms
+    volatile u8
+        cur_scan_times; // 按键扫描频率, 单位ms，由1ms的定时器中断内累加，在key_driver_scan()中清零
+    volatile u8 last_key; // 存放上一次调用get_value()之后得到的按键值
 
     //== 用于消抖类参数 ==//
     volatile u8 filter_value; // 用于按键消抖，存放消抖期间得到的键值
@@ -38,9 +40,10 @@ typedef struct key_driver_para
     const u8 filter_time;     // 当filter_cnt累加到base_cnt值时, 消抖有效
 
     //== 用于判定长按和HOLD事件参数
-    const u8 long_time;    // 按键判定长按数量
-    const u8 hold_time;    // 按键判定HOLD数量
-    volatile u8 press_cnt; // 与long_time和hold_time对比, 判断long_event和hold_event
+    const u8 long_time; // 按键判定长按数量
+    const u8 hold_time; // 按键判定HOLD数量
+    volatile u8
+        press_cnt; // 与long_time和hold_time对比, 判断long_event和hold_event
 
     //== 用于判定连击事件参数
     volatile u8 click_cnt;       // 按键按下次数

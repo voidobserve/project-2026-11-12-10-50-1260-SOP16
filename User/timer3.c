@@ -8,7 +8,8 @@
 */
 
 // 实际测试在935us，如果有其他定时器中断，时间会有误差，在910~960us
-#define TIMER3_PERIOD_VAL (SYSCLK / 128 / 1069 - 1) // 周期值=系统时钟/分频/频率 - 1
+#define TIMER3_PERIOD_VAL                                                      \
+    (SYSCLK / 128 / 1069 - 1) // 周期值=系统时钟/分频/频率 - 1
 
 void timer3_config(void)
 {
@@ -19,8 +20,10 @@ void timer3_config(void)
     TMR_ALLCON = TMR3_CNT_CLR(0x1);                               // 清除计数值
     TMR3_PRH = TMR_PERIOD_VAL_H((TIMER3_PERIOD_VAL >> 8) & 0xFF); // 周期值
     TMR3_PRL = TMR_PERIOD_VAL_L((TIMER3_PERIOD_VAL >> 0) & 0xFF);
-    TMR3_CONH = TMR_PRD_PND(0x1) | TMR_PRD_IRQ_EN(0x1);                          // 计数等于周期时允许发生中断
-    TMR3_CONL = TMR_SOURCE_SEL(0x7) | TMR_PRESCALE_SEL(0x7) | TMR_MODE_SEL(0x1); // 选择系统时钟，128分频，计数模式
+    TMR3_CONH =
+        TMR_PRD_PND(0x1) | TMR_PRD_IRQ_EN(0x1); // 计数等于周期时允许发生中断
+    TMR3_CONL = TMR_SOURCE_SEL(0x7) | TMR_PRESCALE_SEL(0x7) |
+                TMR_MODE_SEL(0x1); // 选择系统时钟，128分频，计数模式
 }
 
 void TIMR3_IRQHandler(void) interrupt TMR3_IRQn
@@ -29,8 +32,7 @@ void TIMR3_IRQHandler(void) interrupt TMR3_IRQn
     __IRQnIPnPush(TMR3_IRQn);
 
     // ---------------- 用户函数处理 -------------------
-    if (0 == (TMR3_CONH & TMR_PRD_PND(0x1)))
-    {
+    if (0 == (TMR3_CONH & TMR_PRD_PND(0x1))) {
         // 不是该中断触发（运算之后是非0值，才是该中断触发），直接退出
         // 退出中断设置IP，不可删除
         __IRQnIPnPop(TMR3_IRQn);
@@ -42,55 +44,46 @@ void TIMR3_IRQHandler(void) interrupt TMR3_IRQn
     // 这段代码必须要放在切换通道前面，否则时序和逻辑会有问题
     {
         static volatile u8 cnt;
-        static volatile u8 flag_is_time_to_sync_adc_status = 1; // 标志位，是否要同步adc的通道，更新adc状态
+        static volatile u8 flag_is_time_to_sync_adc_status =
+            1; // 标志位，是否要同步adc的通道，更新adc状态
         cnt++;
-        if (cnt >= 8 && flag_is_time_to_sync_adc_status)
-        {
+        if (cnt >= 8 && flag_is_time_to_sync_adc_status) {
             flag_is_time_to_sync_adc_status = 0;
             cur_adc_status = ADC_STATUS_NONE; // 给下面的代码检测到，切换通道
         }
 
-        if (cnt >= 10)
-        {
+        if (cnt >= 10) {
             cnt = 0;
-            flag_is_time_to_check_engine = 1;    // 到了检测发动机的时间，让主函数扫描到，调用
-            flag_is_time_to_sync_adc_status = 1; // 等到下一个周期，同步adc0的通道
+            flag_is_time_to_check_engine =
+                1; // 到了检测发动机的时间，让主函数扫描到，调用
+            flag_is_time_to_sync_adc_status =
+                1; // 等到下一个周期，同步adc0的通道
         }
     }
 
 #if 1
     // 每次执行到这里，不用等 adc0 稳定，因为中断时间间隔比 adc0 稳定的时间还要长
     if (ADC_STATUS_NONE == cur_adc_status ||
-        (ADC_STATUS_SEL_FAN_DETECT == cur_adc_status))
-    {
+        (ADC_STATUS_SEL_FAN_DETECT == cur_adc_status)) {
         // adc0 切换至检测发动机的通道，并等待 adc0 稳定
         adc_channel_sel(ADC_SEL_PIN_ENGINE);
         cur_adc_status = ADC_STATUS_SEL_ENGINE_WAITING;
-    }
-    else if (ADC_STATUS_SEL_ENGINE_WAITING == cur_adc_status)
-    {
-        ADC_CFG0 |= 0x01 << 0;                  // 开启adc0转换
-        cur_adc_status = ADC_STATUS_SEL_ENGINE; // 表示当前已经切换到了 检测发动机的通道
-    }
-    else if (ADC_STATUS_SEL_ENGINE_DONE == cur_adc_status)
-    {
+    } else if (ADC_STATUS_SEL_ENGINE_WAITING == cur_adc_status) {
+        ADC_CFG0 |= 0x01 << 0; // 开启adc0转换
+        cur_adc_status =
+            ADC_STATUS_SEL_ENGINE; // 表示当前已经切换到了 检测发动机的通道
+    } else if (ADC_STATUS_SEL_ENGINE_DONE == cur_adc_status) {
         // adc0 切换至检测温度的通道，并等待 adc0 稳定
         adc_channel_sel(ADC_SEL_PIN_TEMP);
         cur_adc_status = ADC_STATUS_SEL_GET_TEMP_WAITING;
-    }
-    else if (ADC_STATUS_SEL_GET_TEMP_WAITING == cur_adc_status)
-    {
+    } else if (ADC_STATUS_SEL_GET_TEMP_WAITING == cur_adc_status) {
         ADC_CFG0 |= 0x01 << 0;                    // 开启adc0转换
         cur_adc_status = ADC_STATUS_SEL_GET_TEMP; // 检测温度的通道
-    }
-    else if (ADC_STATUS_SEL_GET_TEMP == cur_adc_status)
-    {
+    } else if (ADC_STATUS_SEL_GET_TEMP == cur_adc_status) {
         // adc0 切换至检测风扇的通道，并等待 adc0 稳定
         adc_channel_sel(ADC_SEL_PIN_FAN);
         cur_adc_status = ADC_STATUS_SEL_FAN_DETECT_WAITING;
-    }
-    else if (ADC_STATUS_SEL_FAN_DETECT_WAITING == cur_adc_status)
-    {
+    } else if (ADC_STATUS_SEL_FAN_DETECT_WAITING == cur_adc_status) {
         ADC_CFG0 |= 0x01 << 0;                      // 开启adc0转换
         cur_adc_status = ADC_STATUS_SEL_FAN_DETECT; // 检测风扇的通道
     }

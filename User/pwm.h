@@ -32,17 +32,18 @@ enum
     PWM_MODE_COLOR_TEMPERATURE_1, // 色温1
     PWM_MODE_COLOR_TEMPERATURE_2,
     PWM_MODE_COLOR_TEMPERATURE_3,
-    PWM_MODE_COLOR_TEMPERATURE_4,
 
     PWM_MODE_COLOR_BLUE,  // 蓝光
     PWM_MODE_COLOR_CYAN,  // 青光
     PWM_MODE_COLOR_GREEN, // 绿光
 
-    PWM_MODE_PULSE_1, // 脉冲模式 1
-    PWM_MODE_PULSE_2, // 脉冲模式 2
-    PWM_MODE_PULSE_3,
-    PWM_MODE_PULSE_4,
-    PWM_MODE_PULSE_5,
+    // 亮度等级
+    PWM_MODE_BRIGHTNESS_LEV_1,
+    PWM_MODE_BRIGHTNESS_LEV_2,
+    PWM_MODE_BRIGHTNESS_LEV_3,
+    PWM_MODE_BRIGHTNESS_LEV_4,
+    PWM_MODE_BRIGHTNESS_LEV_5,
+    PWM_MODE_BRIGHTNESS_LEV_6,
 };
 
 // 由温度限制的PWM占空比 （对所有PWM通道都生效）
@@ -52,15 +53,20 @@ extern volatile u16 limited_pwm_duty_due_to_unstable_engine;
 // 由于风扇异常，限制的可以调节到的最大占空比（对所有PWM通道都生效，默认为最大占空比）
 extern volatile u16 limited_pwm_duty_due_to_fan_err;
 
-extern volatile u16 cur_pwm_channel_0_duty;           // 当前设置的、 pwm_channle_0 的占空比
-extern volatile u16 expect_adjust_pwm_channel_0_duty; // 存放期望调节到的 pwm_channle_0 占空比
-extern volatile u16 adjust_pwm_channel_0_duty;        // pwm_channle_0 要调整到的占空比
+extern volatile u16 cur_pwm_channel_0_duty; // 当前设置的、 pwm_channle_0 的占空比
+extern volatile u16
+    expect_adjust_pwm_channel_0_duty; // 存放期望调节到的 pwm_channle_0 占空比
+extern volatile u16 adjust_pwm_channel_0_duty; // pwm_channle_0 要调整到的占空比
 
-extern volatile u16 cur_pwm_channel_1_duty;           // 当前设置的第二路PWN的占空比
-extern volatile u16 expect_adjust_pwm_channel_1_duty; // 存放期望调节到的 pwm_channle_1 占空比
-extern volatile u16 adjust_pwm_channel_1_duty;        // pwm_channle_1 要调整到的占空比
+extern volatile u16 cur_pwm_channel_1_duty; // 当前设置的第二路PWN的占空比
+extern volatile u16
+    expect_adjust_pwm_channel_1_duty; // 存放期望调节到的 pwm_channle_1 占空比
+extern volatile u16 adjust_pwm_channel_1_duty; // pwm_channle_1 要调整到的占空比
 
 extern volatile u8 pwm_mode;
+
+// 当前亮度等级（PWM_MODE_BRIGHTNESS_LEV_x），与颜色模式互相独立
+extern volatile u8 pwm_brightness_lev;
 
 void pwm_init(void);
 
@@ -82,6 +88,6 @@ void set_pwm_channel_1_duty(u16 channel_duty);
 
 u16 get_pwm_channel_x_adjust_duty(const u16 pwm_adjust_duty);
 
-void pwm_mode_handle(void);
+void pwm_mode_apply(void);
 
 #endif

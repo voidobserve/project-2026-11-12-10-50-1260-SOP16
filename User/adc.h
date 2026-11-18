@@ -39,7 +39,6 @@ enum
     ADC_STATUS_SEL_FAN_DETECT_WAITING, // 等待adc稳定
     ADC_STATUS_SEL_FAN_DETECT,         // 切换至检测风扇的通道
 };
- 
 
 extern volatile u8 cur_adc_status;  // 状态机，表示当前adc的状态
 extern volatile u8 cur_adc2_status; // 状态机，表示当前adc2的状态
@@ -55,18 +54,17 @@ extern volatile u16 adc_val_from_engine; // 存放 从发动机一侧 检测到�
 extern volatile u16 adc_val_from_knob;   // 存放 从旋钮一侧 采集到的ad值
 extern volatile u16 adc_val_from_temp;   // 存放 从热敏电阻一侧 采集到的ad值
 extern volatile u16 adc_val_from_fan;    // 存放 检测风扇一侧 采集到的ad值
- 
 
 void adc_pin_config(void); // adc相关的引脚配置，调用完成后，还未能使用adc
 
 u32 get_voltage_from_pin(void); // 从引脚上采集滤波后的电压值
- 
+
 void temperature_scan(void);
 void set_duty(void);
 
 void fan_scan(void);
 
-void adc_config(void); 
-void adc_channel_sel(u8 adc_sel_pin); 
+void adc_config(void);
+void adc_channel_sel(u8 adc_sel_pin);
 
 #endif

@@ -15,8 +15,6 @@
 #define PWM0_DEST_POWER_ON_DUTY_VAL ((u16)PWM_DUTY_X_PERCENT(42))
 #define PWM1_DEST_POWER_ON_DUTY_VAL ((u16)PWM_DUTY_X_PERCENT(65))
 
-
-
 // 开机缓启动的时间，单位：ms
 #define POWER_ON_TIMES ((u16)8000)
 /*
@@ -25,11 +23,14 @@
     这里是每次调节的步长，尽量让每ms调节的步长小于等于1（ POWER_ON_ADJUST_STEP <= 1000 ）
 */
 // #define POWER_ON_ADJUST_STEP ((u32)DEST_POWER_ON_DUTY_VAL * 1000 / POWER_ON_TIMES)
-#define PWM0_POWER_ON_ADJUST_STEP ((u32)PWM0_DEST_POWER_ON_DUTY_VAL * 1000 / POWER_ON_TIMES)
-#define PWM1_POWER_ON_ADJUST_STEP ((u32)PWM1_DEST_POWER_ON_DUTY_VAL * 1000 / POWER_ON_TIMES)
+#define PWM0_POWER_ON_ADJUST_STEP                                              \
+    ((u32)PWM0_DEST_POWER_ON_DUTY_VAL * 1000 / POWER_ON_TIMES)
+#define PWM1_POWER_ON_ADJUST_STEP                                              \
+    ((u32)PWM1_DEST_POWER_ON_DUTY_VAL * 1000 / POWER_ON_TIMES)
 
-extern volatile bit flag_is_in_power_on;             // 是否处于开机缓启动
-extern volatile bit flag_time_comes_during_power_on; // 标志位，开机缓启动期间，调节时间到来
+extern volatile bit flag_is_in_power_on; // 是否处于开机缓启动
+extern volatile bit
+    flag_time_comes_during_power_on; // 标志位，开机缓启动期间，调节时间到来
 
 // void power_on_step_add(void);
 void power_on_handle(void);

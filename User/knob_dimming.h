@@ -6,7 +6,7 @@
 
 #define KNOB_DIMMING_ENABLE 0
 
-#if KNOB_DIMMING_ENABLE 
+#if KNOB_DIMMING_ENABLE
 #define KNOB_DIMMING_LEVELS (160) // 旋钮调光的分级
 // #define KNOB_DIMMING_ADC_DEAD_ZONE (200)                             // 最大电压值和最小电压值使用到的死区 (客户反馈扭到10%占空比就关了)
 // #define KNOB_DIMMING_ADC_DEAD_ZONE (50)                             // 最大电压值和最小电压值使用到的死区
@@ -18,11 +18,13 @@
 // #define KNOB_DIMMING_MAX_ADC_VAL (4006 - KNOB_DIMMING_ADC_DEAD_ZONE) //
 // #define KNOB_DIMMING_MAX_ADC_VAL (4001 - KNOB_DIMMING_ADC_DEAD_ZONE) // 最大功率458W，还没到461W
 #define KNOB_DIMMING_MAX_ADC_VAL (3996 - KNOB_DIMMING_ADC_DEAD_ZONE) //
-#define KNOB_DIMMING_MIN_ADC_VAL (479 + KNOB_DIMMING_ADC_DEAD_ZONE)  // 客户引脚上测得最小电压值是0.57V
+#define KNOB_DIMMING_MIN_ADC_VAL                                               \
+    (479 + KNOB_DIMMING_ADC_DEAD_ZONE) // 客户引脚上测得最小电压值是0.57V
 
 // 旋钮调光其中一级对应的ad值
-#define KNOB_DIMMING_ADC_VAL_PER_LEVEL \
-    ((u16)(KNOB_DIMMING_MAX_ADC_VAL - KNOB_DIMMING_MIN_ADC_VAL) / KNOB_DIMMING_LEVELS) // 若干分级中，其中的一级对应的ad值
+#define KNOB_DIMMING_ADC_VAL_PER_LEVEL                                         \
+    ((u16)(KNOB_DIMMING_MAX_ADC_VAL - KNOB_DIMMING_MIN_ADC_VAL) /              \
+     KNOB_DIMMING_LEVELS) // 若干分级中，其中的一级对应的ad值
 
 /*
     旋钮调光的每一级分级之间的死区
@@ -41,7 +43,7 @@
 #define KNOB_DIMMING_ADC_VAL_60_PERCENT 3260
 // #define KNOB_DIMMING_ADC_VAL_80_PERCENT
 
-extern volatile u16 limited_max_pwm_duty;    // 存放限制的最大占空比
+extern volatile u16 limited_max_pwm_duty; // 存放限制的最大占空比
 // extern volatile u16 limited_adjust_pwm_duty; // 存放旋钮限制之后的，待调整的占空比值
 
 // 根据旋钮，限制当前的最大占空比
